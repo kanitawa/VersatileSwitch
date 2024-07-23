@@ -1,0 +1,38 @@
+#######################################
+# Syntax Coloring Map For VersatileSwitch
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+VersatileSwitch	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+attachCallback_LongClicked	KEYWORD2
+attachCallback_Holded	KEYWORD2
+attachCallback_Repeated	KEYWORD2
+attachCallback_LongClicked	KEYWORD2
+attachCallback_DoubleClicked	KEYWORD2
+attachCallback_Released	KEYWORD2
+
+setTimeParalyze	KEYWORD2
+setTimeUntilHold	KEYWORD2
+setTimeRepeat	KEYWORD2
+setTimeAcceptDoubleClick	KEYWORD2
+
+isOn	KEYWORD2
+isOff	KEYWORD2
+
+poll	KEYWORD2
+
+#######################################
+# Instances (KEYWORD2)
+#######################################
+
+#######################################
+# Constants (LITERAL1)
+#######################################
