@@ -12,11 +12,12 @@ enum SWITCH_STATUS {RELEASED, PRESSED, HOLDED, CLICKED, CLICK_AND_PRESSED};
 
 class VersatileSwitch {
   private:
-    // values of switch ON and OFF
+    uint8_t pin; // pin number for switch
+    uint8_t mode; // mode of input [INPUT, INPUT_PULLUP]
+
     uint8_t vol_off, vol_on; // [HIGH, LOW] value for OFF and ON
     uint8_t vol_prev, vol_curr; // [HIGH, LOW] value of switch pin in prevoius and current polling
 
-    // 時定数
     uint32_t time_paralyze; // msec. of paralyzing for debouncing
     uint32_t time_press; // msec. from press start to transition hold
     uint32_t time_repeat; // msec. for repeat interval in hold state
@@ -51,9 +52,6 @@ class VersatileSwitch {
     void(* callback_released)(void); // callback function for releasing switch
 
   public:
-    uint8_t pin; // pin number for switch
-    uint8_t mode; // mode of input [INPUT, INPUT_PULLUP]
-
     VersatileSwitch(uint8_t, uint8_t); // constructor
 
     void attachCallback_Pressed(void(* func)(void));
