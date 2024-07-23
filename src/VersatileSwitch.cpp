@@ -1,97 +1,94 @@
 /*
   VersatileSwitch.cpp
 */
+
 #include "Arduino.h"
 #include "VersatileSwitch.h"
 
-// コンストラクタ
-VersatileSwitch::VersatileSwitch(uint8_t p, uint8_t m) { // p : pin number, m : pin mode [INPUT, INPUT_PULLUP]
-  // 時定数と状態の初期化
-  time_paralyze = 5; // 麻痺時間は5ミリ秒
-  time_press = 500; // 押下から保持まで500ミリ秒
-  time_repeat = 500; // 保持中の反復間隔は500ミリ秒
-  time_accept = 200; // クリック判定から200ミリ秒以内に押下があれば「CLICK_AND_PRESSED」と判定
+// constructor
+VersatileSwitch::VersatileSwitch(uint8_t p, uint8_t m) {
+  // initial values of time constants
+  time_paralyze = 5;
+  time_press = 500;
+  time_repeat = 500;
+  time_accept = 200;
 
-  status = RELEASED; // 現在のキーの状態は「解放」
+  // initial value of status
+  status = RELEASED;
 
-  // 時刻の初期化
-  isParalyzing = false; // 麻痺中ではない
-  ms_paralyzed = 0; // 麻痺開始時刻
-  ms_pressed = 0; // 押下開始時刻
-  ms_clicked = 0; // クリック判定時刻
+  // initialize times
+  isParalyzing = false;
+  ms_paralyzed = 0;
+  ms_pressed = 0;
+  ms_clicked = 0;
 
-  // コールバック関数の初期化
-  is_press_attached = false; // callback_pressedがアタッチされていない
-  is_click_attached = false; // callback_clickedがアタッチされていない
-  is_repeat_attached = false; // callback_repeatedがアタッチされていない
-  is_long_attached = false; // callback_long_clickedがアタッチされていない
-  is_double_attached = false; // callback_double_clickedがアタッチされていない
-  is_release_attached = false; // callback_releasedがアタッチされていない
+  // initialize callbackes
+  // all callback functtions are not attached.
+  is_press_attached = false;
+  is_click_attached = false;
+  is_repeat_attached = false;
+  is_long_attached = false;
+  is_double_attached = false;
+  is_release_attached = false;
 
-  // ピンの初期化と割り当て
-  pin = p; // ピン番号をセット
-  if (m == INPUT) { // 動作モードによってスイッチオフとオンとなる電圧値を設定する
+  // asign pin mode
+  if (m == INPUT) { // when mode is INPUT, OFF = LOW and ON = HIGH.
     mode = INPUT; vol_off = LOW; vol_on = HIGH;
-  } else {
+  } else { // when mode is INPUT_PULLUP, OFF = HIGH and ON = LOW.
     mode = INPUT_PULLUP; vol_off = HIGH; vol_on = LOW;
   }
-  pinMode(pin, mode); // ピンを入力としてセット
+  pin = p;
+  pinMode(pin, mode);
 
-  // オン・オフ電圧値の設定
-  vol_prev = vol_off; // 前回電圧をオフに設定する
+  // initialize values of pin voltage
+  vol_prev = vol_off;
 }
 
-// publicメンバー関数
-// 押下状態遷移時のコールバック関数登録
+// public member functions
+// attach callback funtions
 void VersatileSwitch::attachCallback_Pressed(void(* func)(void)) {
   callback_pressed = func;
   is_press_attached = true;
 }
 
-// シングルクリック判定時のコールバック関数登録
 void VersatileSwitch::attachCallback_Clicked(void(* func)(void)) {
   callback_clicked = func;
   is_click_attached = true;
 }
 
-// 保持状態遷移時のコールバック関数登録
 void VersatileSwitch::attachCallback_Holded(void(* func)(void)) {
   callback_holded = func;
   is_hold_attached = true;
 }
 
-// リピート発生時のコールバック関数登録
 void VersatileSwitch::attachCallback_Repeated(void(* func)(void)) {
   callback_repeated = func;
   is_repeat_attached = true;
 }
 
-// 長押し発生時のコールバック関数登録
 void VersatileSwitch::attachCallback_LongClicked(void(* func)(void)) {
   callback_long_clicked = func;
   is_long_attached = true;
 }
 
-// ダブルクリック判定時のコールバック関数登録
 void VersatileSwitch::attachCallback_DoubleClicked(void(* func)(void)) {
   callback_double_clicked = func;
   is_double_attached = true;
 }
 
-// キーリリース時のコールバック関数登録
 void VersatileSwitch::attachCallback_Released(void(* func)(void)) {
   callback_released = func;
   is_release_attached = true;
 }
 
-// 各種時間の設定関数
-void VersatileSwitch::setTimeParalyze(uint32_t t) {time_paralyze = t;} // 麻痺時間の設定
-void VersatileSwitch::setTimeUntilHold(uint32_t t) {time_press = t;} // 押下から保持までの時間の設定
-void VersatileSwitch::setTimeRepeat(uint32_t t) {time_repeat = t;} // 保持後のキーリピート時間の設定
-void VersatileSwitch::setTimeAcceptDoubleClick(uint32_t t) {time_accept = t;} // クリック後にダブルクリックを受け付ける時間の設定
+// setter for time constants
+void VersatileSwitch::setTimeParalyze(uint32_t t) {time_paralyze = t;}
+void VersatileSwitch::setTimeUntilHold(uint32_t t) {time_press = t;}
+void VersatileSwitch::setTimeRepeat(uint32_t t) {time_repeat = t;}
+void VersatileSwitch::setTimeAcceptDoubleClick(uint32_t t) {time_accept = t;}
 
-// 非同期的な状態の取得
-boolean VersatileSwitch::isOn() { // オンかどうか
+// getter for switch value [ON, OFF]
+boolean VersatileSwitch::isOn() {
   switch (status) {
     case PRESSED:
     case HOLDED:
@@ -102,88 +99,86 @@ boolean VersatileSwitch::isOn() { // オンかどうか
   }
 }
 
-boolean VersatileSwitch::isOff() { // オフかどうか
-  return !isOn();
-}
+boolean VersatileSwitch::isOff() {return !isOn();}
 
-// スイッチのポーリングと動作状態遷移によるコールバックの呼び出し
+// polling switch status and callback
 void VersatileSwitch::poll() {
-  if (isParalyzing) { // 麻痺中であれば
-    if (millis() - ms_paralyzed > time_paralyze) { // 麻痺時間を超過していた
-      vol_curr = digitalRead(pin); // 現在の電圧値を取得
-      if (vol_prev != vol_curr) { // 麻痺開始時と現在の電圧値が異なる
-        if (vol_curr == vol_on) { // 現在の電圧値がオンなので押下と判断する
-          if (is_press_attached) callback_pressed(); // 押下時コールバックが設定されてれば呼ぶ
-          ms_pressed = millis(); // 押下開始時刻を更新
+  if (isParalyzing) { // in paralyzing
+    if (millis() - ms_paralyzed > time_paralyze) { // time over paralyzing
+      vol_curr = digitalRead(pin);
+      if (vol_prev != vol_curr) { // current value is different from before paralyzing 
+        if (vol_curr == vol_on) { // current value is ON, switch is pressing
+          if (is_press_attached) callback_pressed(); // callback "pressed" if attached
+          ms_pressed = millis(); // update starting time of pressing
           switch (status) {
-            case RELEASED: // 解放->押下なので状態を押下中に更新
+            case RELEASED: // status RELEASED -> PRESSED = PRESSED
               status = PRESSED;
               break;
-            case CLICKED: // クリック後次押下受付時間中に押下されたのでクリック後押下中に更新
+            case CLICKED: // status CLICKED -> PRESSED = CLICK_AND_PRESSED
               status = CLICK_AND_PRESSED;
               break;
             default: break;
           }
-        } else { // 現在の電圧値がオンではないので解放と判断する
-          if (is_release_attached) callback_released(); // 解放時コールバックが設定されてれば呼ぶ
-          switch (status) { // スイッチ状態が
-            case PRESSED: // 押下中だったのでシングルクリックと判定する
-              status = CLICKED; // 状態をシングルクリックに更新
-              ms_clicked = millis(); // クリック判定時刻を更新
+        } else { // current value is OFF, switch is released
+          if (is_release_attached) callback_released(); // callback "released" if attached
+          switch (status) {
+            case PRESSED: // status PRESSED -> RELEASED = CLICKED
+              status = CLICKED;
+              ms_clicked = millis(); // update completed time of clicking
               break;
-            case CLICK_AND_PRESSED: // クリック後押下中だったのでダブルクリックと判定する
-              if (is_double_attached) callback_double_clicked(); // ダブルクリック時コールバックが設定されてれば呼ぶ
+            case CLICK_AND_PRESSED: // status CLICK_AND_PRESSED -> RELEASED = double-clicked
+              if (is_double_attached) callback_double_clicked(); // callback "double_clicked" if attached
               ms_pressed = 0; ms_clicked = 0;
-              status = RELEASED; // 状態を解放中に更新
+              status = RELEASED; // status update to RELEASED
               break;
-            case HOLDED: // 保持中だったので長押しと判断する
-              if (is_long_attached) callback_long_clicked(); // ロングクリック時コールバックが設定されてれば呼ぶ
+            case HOLDED: // status HOLDED -> RELEASED = long_clicked
+              if (is_long_attached) callback_long_clicked(); // callback "long_clicked" if attached
               ms_pressed = 0; ms_clicked = 0;
-              status = RELEASED; // 状態を解放中に更新
+              status = RELEASED; // status update to RELEASED
               break;
             default: break;
           }
         }
-        vol_prev = vol_curr; // 前回電圧値を更新
-      } // 麻痺開始時と現在の電圧値が同じなので、この麻痺はグリッチによるものと判断し何もしない
-      isParalyzing = false; // 麻痺を解除
-    } // 麻痺時間以内であれば何もしない
-  } else { // 麻痺中でなければ
-    vol_curr = digitalRead(pin); // 現在の電圧値を取得
-    if (vol_prev != vol_curr) { // 前回と今回の電圧値が異なる
-      isParalyzing = true; // 麻痺させる
-      ms_paralyzed = millis();
-    } else { // 前回と今回の電圧値が同じである
+        vol_prev = vol_curr; // update previous value
+      }
+      isParalyzing = false;
+    }
+  } else { // not in paralyzing
+    vol_curr = digitalRead(pin);
+    if (vol_prev != vol_curr) { // switch pin voltage change from previous polling
+      isParalyzing = true; // move into paralyze
+      ms_paralyzed = millis(); // update starting time of paralyzing
+    } else { // switch pin voltage is same with previous polling
       switch (status) {
-        case PRESSED: // 押下中だった
-          if (millis() - ms_pressed > time_press) { // 保持時間を超過していた
-            if (is_hold_attached) callback_holded(); // 保持開始時コールバックが設定されてれば呼ぶ
-            if (is_repeat_attached) callback_repeated(); // リピート時コールバックが設定されてれば呼ぶ
-            status = HOLDED; // 状態を保持に更新
-            ms_pressed = millis(); // 押下開始時刻を保持開始時刻に更新
-          } // 押下中だがまだ保持時間に達していないので何もしない
-          break;
-        case HOLDED: // 保持中だった
-          if (millis() - ms_pressed > time_repeat) { // 反復時間を超えて押下され続けてた
-            if (is_repeat_attached) callback_repeated(); // キーリピート時コールバックが設定されてれば呼ぶ
-            ms_pressed = millis(); // 押下開始時刻を保持開始時刻に更新
-          } // 押下中だがまだ保持時間に達していない
-          break;
-        case CLICKED: // クリック後の次押下受付中だった
-          if (millis() - ms_clicked > time_accept) { // クリック後の次押下受付時間を超過していたのでシングルクリックが確定
-            if (is_click_attached) callback_clicked(); // クリック時コールバックが設定されてれば呼ぶ
-            status = RELEASED; // 状態を解放に更新
+        case PRESSED: // continue to PRESSED
+          if (millis() - ms_pressed > time_press) { // if time over pressing,
+            if (is_hold_attached) callback_holded(); // callback "holded" if attached
+            if (is_repeat_attached) callback_repeated(); // callback "repeated" if attached
+            status = HOLDED;
+            ms_pressed = millis(); // update starting time of pressing
           }
           break;
-        case CLICK_AND_PRESSED: // クリック後押下中だった
-          if (millis() - ms_pressed > time_press) { // 保持時間を超過していた
-            if (is_click_attached) callback_clicked(); // クリック時コールバックが設定されてれば呼ぶ
-            if (is_hold_attached) callback_holded(); // 保持開始時コールバックが設定されてれば呼ぶ
-            if (is_repeat_attached) callback_repeated(); // リピート時コールバックが設定されてれば呼ぶ
-            status = HOLDED; // 状態を保持に更新
-            ms_pressed = millis(); // 押下開始時刻を保持開始時刻に更新
+        case HOLDED: // continue to HOLDED
+          if (millis() - ms_pressed > time_repeat) { // if time over repeating,
+            if (is_repeat_attached) callback_repeated(); // callback "repeated" if attached
+            ms_pressed = millis(); // update starting time of pressing
+          }
+          break;
+        case CLICKED: // continue to CLICKED
+          if (millis() - ms_clicked > time_accept) { // if status is NOT changed during time_accept
+            if (is_click_attached) callback_clicked(); // callback "clicked" if attached
+            status = RELEASED;
+          }
+          break;
+        case CLICK_AND_PRESSED: // continue to CLICK_AND_PRESSED
+          if (millis() - ms_pressed > time_press) { // if status is NOT changed during time_press
+            if (is_click_attached) callback_clicked(); // callback "clicked" if attached
+            if (is_hold_attached) callback_holded(); // callback "holded" if attached
+            if (is_repeat_attached) callback_repeated(); // リcallback "repeated" if attached
+            status = HOLDED;
+            ms_pressed = millis(); // update starting time of pressing
             ms_clicked = 0;
-          } // 押下中だがまだ保持時間に達していないので何もしない
+          }
           break;
         default: break;
       }
