@@ -1,6 +1,6 @@
 /*
-    VersatileSwitchAsKey.ino
-    Example code for using switch as a key.
+    VersatileSwitch_As_Key_with_Callback.ino
+    Example code for switch as a key using callback functions.
 */
 
 #include <VersatileSwitch.h>
@@ -12,7 +12,7 @@ VersatileSwitch key(PIN_SW, INPUT_PULLUP);
 void setup() {
   Serial.begin(9600);
   while (!Serial) { }
-  Serial.println("*** demo VersatileSwitchAsKey ***");
+  Serial.println("*** demo VersatileSwitch_As_Key_with_Callback ***");
 
   // attach callback functions using as a key
   key.attachCallback_Pressed(on_key_pressed);

@@ -8,15 +8,15 @@
 #include "Arduino.h"
 
 // Enum status of switch
-enum SWITCH_STATUS {RELEASED, PRESSED, HELD, CLICKED, CLICK_AND_PRESSED};
+enum SWITCH_STATUS {RELEASED, PRESSED, HELD, RELEASED_AFTER_CLICK, PRESSED_AFTER_CLICK};
 
 class VersatileSwitch {
   private:
     uint8_t pin; // pin number for switch
     uint8_t mode; // mode of input [INPUT, INPUT_PULLUP]
 
-    uint8_t vol_off, vol_on; // [HIGH, LOW] value for OFF and ON
-    uint8_t vol_prev, vol_curr; // [HIGH, LOW] value of switch pin in prevoius and current polling
+    uint8_t vol_off, vol_on; // [HIGH, LOW] for OFF and ON
+    uint8_t vol_prev, vol_curr; // [HIGH, LOW] of switch pin in prevoius and current polling
 
     uint32_t time_paralyze; // msec. of paralyzing for debouncing
     uint32_t time_press; // msec. from start of pressing to transition to hold
@@ -51,12 +51,16 @@ class VersatileSwitch {
     boolean is_release_attached; // true if callback_released is attached
     void(* callback_released)(void); // callback function for releasing switch
 
+    boolean is_clicked; // one-time variable for detect click
+    boolean is_long_clicked; // one-time variable for detect click
+    boolean is_double_clicked; // one-time variable for detect click
+
   public:
     VersatileSwitch(uint8_t, uint8_t); // constructor
 
     void attachCallback_Pressed(void(* func)(void));
     void attachCallback_Clicked(void(* func)(void));
-    void attachCallback_Holded(void(* func)(void));
+    void attachCallback_Held(void(* func)(void));
     void attachCallback_Repeated(void(* func)(void));
     void attachCallback_LongClicked(void(* func)(void));
     void attachCallback_DoubleClicked(void(* func)(void));
@@ -64,11 +68,19 @@ class VersatileSwitch {
 
     void setTimeParalyze(uint32_t);
     void setTimeUntilHold(uint32_t); 
-    void setTimeRepeat(uint32_t);
+    void setTimeRepeatInterval(uint32_t);
     void setTimeAcceptDoubleClick(uint32_t);
 
     boolean isOn(void); 
     boolean isOff(void);
+    
+    boolean isPressed(void);
+    boolean isReleased(void);
+    boolean isHeld(void);
+
+    boolean isClicked(void);
+    boolean isLongClicked(void);
+    boolean isDoubleClicked(void);
     
     void poll(void);
 };

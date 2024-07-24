@@ -32,6 +32,11 @@ VersatileSwitch::VersatileSwitch(uint8_t p, uint8_t m) {
   is_double_attached = false;
   is_release_attached = false;
 
+  // all one-time variables are not detected.
+  is_clicked = false;
+  is_long_clicked = false;
+  is_double_clicked = false; 
+
   // asign pin mode
   if (m == INPUT) { // when mode is INPUT, OFF = LOW and ON = HIGH.
     mode = INPUT; vol_off = LOW; vol_on = HIGH;
@@ -89,21 +94,32 @@ void VersatileSwitch::setTimeRepeatInterval(uint32_t t) {time_repeat = t;}
 void VersatileSwitch::setTimeAcceptDoubleClick(uint32_t t) {time_accept = t;}
 
 // getter for switch value [ON, OFF]
-boolean VersatileSwitch::isOn() {
+boolean VersatileSwitch::isOff() {
   switch (status) {
-    case PRESSED:
-    case HELD:
-    case CLICK_AND_PRESSED:
+    case RELEASED:
+    case RELEASED_AFTER_CLICK:
       return true;
       break;
     default: return false;
   }
 }
 
-boolean VersatileSwitch::isOff() {return !isOn();}
+boolean VersatileSwitch::isOn() {return !isOff();}
+
+boolean VersatileSwitch::isReleased() {return isOff();}
+boolean VersatileSwitch::isPressed() {return !isOff();}
+boolean VersatileSwitch::isHeld() {return (status == HELD);}
+
+boolean VersatileSwitch::isClicked() {return is_clicked;}
+boolean VersatileSwitch::isLongClicked() {return is_long_clicked;}
+boolean VersatileSwitch::isDoubleClicked() {return is_double_clicked;}
 
 // polling switch status and callback
 void VersatileSwitch::poll() {
+  // all one-time variables set to false;
+  is_clicked = false; is_long_clicked = false; is_double_clicked = false;
+
+  // poll status of switch
   if (isParalyzing) { // in paralyzing
     if (millis() - ms_paralyzed > time_paralyze) { // time over paralyzing
       vol_curr = digitalRead(pin);
@@ -112,28 +128,30 @@ void VersatileSwitch::poll() {
           if (is_press_attached) callback_pressed(); // callback "pressed" if attached
           ms_pressed = millis(); // update starting time of pressing
           switch (status) {
-            case RELEASED: // status RELEASED -> PRESSED = PRESSED
+            case RELEASED:
               status = PRESSED;
               break;
-            case CLICKED: // status CLICKED -> PRESSED = CLICK_AND_PRESSED
-              status = CLICK_AND_PRESSED;
+            case RELEASED_AFTER_CLICK:
+              status = PRESSED_AFTER_CLICK;
               break;
             default: break;
           }
         } else { // current value is OFF, switch is released
           if (is_release_attached) callback_released(); // callback "released" if attached
           switch (status) {
-            case PRESSED: // status PRESSED -> RELEASED = CLICKED
-              status = CLICKED;
+            case PRESSED:
+              status = RELEASED_AFTER_CLICK;
               ms_clicked = millis(); // update completed time of clicking
               break;
-            case CLICK_AND_PRESSED: // status CLICK_AND_PRESSED -> RELEASED = double-clicked
+            case PRESSED_AFTER_CLICK:
               if (is_double_attached) callback_double_clicked(); // callback "double_clicked" if attached
+              is_double_clicked = true;
               ms_pressed = 0; ms_clicked = 0;
-              status = RELEASED; // status update to RELEASED
+              status = RELEASED;
               break;
-            case HOLDED: // status HOLDED -> RELEASED = long_clicked
+            case HELD:
               if (is_long_attached) callback_long_clicked(); // callback "long_clicked" if attached
+              is_long_clicked = true;
               ms_pressed = 0; ms_clicked = 0;
               status = RELEASED; // status update to RELEASED
               break;
@@ -151,7 +169,7 @@ void VersatileSwitch::poll() {
       ms_paralyzed = millis(); // update starting time of paralyzing
     } else { // switch pin voltage is same with previous polling
       switch (status) {
-        case PRESSED: // continue to PRESSED
+        case PRESSED:
           if (millis() - ms_pressed > time_press) { // if time over pressing,
             if (is_hold_attached) callback_held(); // callback "holded" if attached
             if (is_repeat_attached) callback_repeated(); // callback "repeated" if attached
@@ -159,21 +177,23 @@ void VersatileSwitch::poll() {
             ms_pressed = millis(); // update starting time of pressing
           }
           break;
-        case HELD: // continue to HOLDED
+        case HELD:
           if (millis() - ms_pressed > time_repeat) { // if time over repeating,
             if (is_repeat_attached) callback_repeated(); // callback "repeated" if attached
             ms_pressed = millis(); // update starting time of pressing
           }
           break;
-        case CLICKED: // continue to CLICKED
+        case RELEASED_AFTER_CLICK:
           if (millis() - ms_clicked > time_accept) { // if status is NOT changed during time_accept
             if (is_click_attached) callback_clicked(); // callback "clicked" if attached
+            is_clicked = true;
             status = RELEASED;
           }
           break;
-        case CLICK_AND_PRESSED: // continue to CLICK_AND_PRESSED
+        case PRESSED_AFTER_CLICK:
           if (millis() - ms_pressed > time_press) { // if status is NOT changed during time_press
             if (is_click_attached) callback_clicked(); // callback "clicked" if attached
+            is_clicked = true;
             if (is_hold_attached) callback_held(); // callback "holded" if attached
             if (is_repeat_attached) callback_repeated(); // リcallback "repeated" if attached
             status = HELD;
