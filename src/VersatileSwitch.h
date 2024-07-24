@@ -8,7 +8,7 @@
 #include "Arduino.h"
 
 // Enum status of switch
-enum SWITCH_STATUS {RELEASED, PRESSED, HOLDED, CLICKED, CLICK_AND_PRESSED};
+enum SWITCH_STATUS {RELEASED, PRESSED, HELD, CLICKED, CLICK_AND_PRESSED};
 
 class VersatileSwitch {
   private:
@@ -19,7 +19,7 @@ class VersatileSwitch {
     uint8_t vol_prev, vol_curr; // [HIGH, LOW] value of switch pin in prevoius and current polling
 
     uint32_t time_paralyze; // msec. of paralyzing for debouncing
-    uint32_t time_press; // msec. from press start to transition hold
+    uint32_t time_press; // msec. from start of pressing to transition to hold
     uint32_t time_repeat; // msec. for repeat interval in hold state
     uint32_t time_accept; // msec. for accepting double-click after first-click 
 
@@ -36,8 +36,8 @@ class VersatileSwitch {
     boolean is_click_attached; // true if callback_clicked is attached
     void(* callback_clicked)(void); // callback function for single-click
 
-    boolean is_hold_attached; // true if callback_clicked is attached
-    void(* callback_holded)(void); // callback function for hold
+    boolean is_hold_attached; // true if callback_held is attached
+    void(* callback_held)(void); // callback function for held
 
     boolean is_repeat_attached; // true if callback_repeated is attached
     void(* callback_repeated)(void); // callback function for repeat

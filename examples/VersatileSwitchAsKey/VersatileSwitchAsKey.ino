@@ -7,7 +7,7 @@
 
 #define PIN_SW 7
 
-VersatileSwitch sw(PIN_SW, INPUT_PULLUP);
+VersatileSwitch key(PIN_SW, INPUT_PULLUP);
 
 void setup() {
   Serial.begin(9600);
@@ -15,20 +15,20 @@ void setup() {
   Serial.println("*** demo VersatileSwitchAsKey ***");
 
   // attach callback functions using as a key
-  sw.attachCallback_Pressed(on_switch_pressed);
-  sw.attachCallback_Repeated(on_switch_repeated);
+  key.attachCallback_Pressed(on_key_pressed);
+  key.attachCallback_Repeated(on_key_repeated);
 }
 
 void loop() {
   // polling switches
-  sw.poll();
+  key.poll();
 }
 
 // callback functions
-void on_switch_pressed() {
+void on_key_pressed() {
   Serial.println("Pressed.");
 }
 
-void on_switch_repeated() {
+void on_key_repeated() {
   Serial.println("Repeated.");
 }
