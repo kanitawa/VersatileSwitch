@@ -9,7 +9,7 @@
 各スイッチについて、ピン番号とモードを引数としてVersatileSwitchのインスタンスを生成します。
 
 ```
-VersatileSwitch switch(4, INPUT_PULLUP); // pin 4, and using internal pull-up
+VersatileSwitch mySwitch(4, INPUT_PULLUP); // pin 4, and using internal pull-up
 ```
 
 スイッチ信号を接続するピンとして、すべてのデジタル入力ピンを使用することができます。
@@ -18,32 +18,32 @@ VersatileSwitch switch(4, INPUT_PULLUP); // pin 4, and using internal pull-up
 
 モードに``` INPUT ```を与えた場合、ピン電圧が
 
-- ``` HIGH ```なら、スイッチが「押された」
-- ``` LOW ```ならスイッチが「離れた」
+- ``` HIGH ```なら、スイッチが「押された（ ```ON``` ）」
+- ``` LOW ```ならスイッチが「離れた（ ```OFF``` ）」
 
 と判定します。
 
 また、モードに``` INPUT_PULLUP ```を与えた場合では、
 
-- ``` LOW ```なら、スイッチが「押された」
-- ``` HIGH ```ならスイッチが「離れた」
+- ``` LOW ```なら、スイッチが「押された（ ```ON``` ）」
+- ``` HIGH ```ならスイッチが「離れた（ ```OFF``` ）」
 
 と判定します。
 
 すべてのインスタンスについて、スイッチ状態の確認のために定期的に ```poll()``` を呼び出します。通常の場合、 ```loop()``` 内で呼び出すことになります。
 
 ```
-switch.poll();
+mySwitch.poll();
 ```
 
 ```poll()``` を呼び出してスイッチ状態を確認・更新した後、それらを関数で取得することができます。
 
 ```
-if (switch.isClicked()) {
+if (mySwitch.isClicked()) {
 
     Serial.println("Clicked.");
 
-} else if (switch.isLongClicked()) {
+} else if (mySwitch.isLongClicked()) {
 
     Serial.println("Long-clicked.");
 
@@ -55,9 +55,9 @@ if (switch.isClicked()) {
 ```
 void setup() {
 
-    switch.attachCallback_Clicked(on_switch_clicked);
+    mySwitch.attachCallback_Clicked(on_switch_clicked);
     
-    switch.attachCallback_LongClicked(on_switch_long_clicked);
+    mySwitch.attachCallback_LongClicked(on_switch_long_clicked);
 
 }
 ```
@@ -67,7 +67,7 @@ void setup() {
 ```
 void loop() {
 
-    switch.poll();
+    mySwitch.poll();
 
 }
 
@@ -87,11 +87,11 @@ void on_switch_long_clicked() {
 ## 状態取得関数
 ### isOn()
 ### isPressed()
-スイッチが「押された」状態にあれば "true" を返します。
+スイッチが「押された（ ```ON``` ）」状態にあれば "true" を返します。
 
 ### isOff()
 ### isReleased()
-スイッチが「離れた」状態にあれば "true" を返します。
+スイッチが「離れた（ ```OFF``` ）」状態にあれば "true" を返します。
 
 ### isHeld()
 スイッチが押され続けて「自動連続押下（リピート）」状態にあれば "true" を返します。この状態の場合、 ```isPressed()``` は "false" を返します。
@@ -137,24 +137,24 @@ void func() {
 ## 内部動作について
 ### スイッチのチャタリング除去（デバウンシング）と ```Pressed / Released``` コールバック
 
-```poll()``` ごとにスイッチ位置を確認します。その位置が前回 ```poll()``` 時と異なっていた場合、麻痺状態になり、麻痺している「 T<sub>paralyze</sub> 」時間中の ```poll()``` では何もおこなわれません。
+```poll()``` ごとにスイッチ位置 [ ```ON```, ```OFF``` ] を確認します。その位置が前回 ```poll()``` 時と異なっていた場合は麻痺状態になり、麻痺している「 T<sub>paralyze</sub> 」時間中の ```poll()``` では何もおこなわれません。
 
-麻痺が終了した最初の ```poll()``` でスイッチ位置を再度確認し、その位置に応じて ```Pressed``` や ```Released``` がコールバックされます。それに伴い、スイッチのステータスが「RELEASED」「PRESSED」に変化します。
+麻痺が終了した最初の ```poll()``` でスイッチ位置を再度確認し、その位置に応じて ```Pressed``` や ```Released``` がコールバックされます。それに伴い、スイッチのステータスが「**RELEASED**」や「**PRESSED**」に変化します。
 
 
 ### スイッチの連続押下と ```Held / Repeated / LongClicked``` コールバック
-スイッチの押下によってステータスが「PRESSED」になった後、```time_Pressing``` 時間を経過した最初の ```poll()``` でまだスイッチが押し続けられていたならば、ステータスを「HELD」に変化させ、そのタイミングで ```Held``` と ```Repeated``` がコールバックされます。
+スイッチの押下によってステータスが「**PRESSED**」になった後、「 T<sub>pressing</sub> 」時間を経過した最初の ```poll()``` でまだスイッチが押し続けられていたならば、ステータスを「**HELD**」に変化させ、そのタイミングで ```Held``` と ```Repeated``` がコールバックされます。
 
-その後は、```time_RepeatInterval``` を超えた最初の ```poll()``` ごとに ```Repeated``` がコールバックます。
+その後は、「 T<sub>repeat</sub> 」を超えた最初の ```poll()``` ごとに ```Repeated``` がコールバックます。
 
 そして、スイッチが離された後の最初の ```poll()``` で ```Released``` と ```LongClicked``` がコールバックされます。
 
 
 ### クリック判定と ```Clicked / DoubleClicked``` コールバック
-スイッチの押下によってステータスが「PRESSED」になった後、```time_Pressing``` 時間以内にスイッチが離された場合、ステータスは「RELEASED_AFTER_CLICK」という特殊な状態に変化します。
+スイッチの押下によってステータスが「**PRESSED**」になった後、「 T<sub>pressing</sub> 」時間以内にスイッチが離された場合、ステータスは「**RELEASED_AFTER_CLICK**」という特殊な状態に変化します。
 
-そして「RELEASED_AFTER_CLICK」になってから ```time_AcceptDoubleClick``` 時間以内にスイッチが押されなければ、シングルクリックであることが確定したとして ```Clicked``` がコールバックされ、ステータスは「RELEASED」に戻ります。
+そして「**RELEASED_AFTER_CLICK**」になってから「 T<sub>accept</sub> 」時間以内にスイッチが押されなければ、シングルクリックであることが確定したとして ```Clicked``` がコールバックされ、ステータスは「**RELEASED**」に戻ります。
 
-またステータスが「RELEASED_AFTER_CLICK」になってから ```time_AcceptDoubleClick``` 時間以内にスイッチが押された場合、ステータスは「PRESSED_AFTER_CLICK」という別の特殊状態に変化します。
+またステータスが「**RELEASED_AFTER_CLICK**」になってから「 T<sub>accept</sub> 」時間以内にスイッチが押された場合、ステータスは「**PRESSED_AFTER_CLICK**」という別の特殊状態に変化します。
 
-そして「PRESSED_AFTER_CLICK」なってから ```time_Pressing``` 時間以内にスイッチが離されたなら、ダブルクリックが成立したものとして ```DoubleClicked``` がコールバックされ、ステータスが「RELEASED」に戻ります。
+そして「**PRESSED_AFTER_CLICK**」なってから「 T<sub>pressing</sub> 」時間以内にスイッチが離されたなら、ダブルクリックが成立したものとして ```DoubleClicked``` がコールバックされ、ステータスが「**RELEASED**」に戻ります。
