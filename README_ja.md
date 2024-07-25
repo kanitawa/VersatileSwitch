@@ -8,7 +8,7 @@
 ## 使い方
 各スイッチについて、ピン番号とモードを引数としてVersatileSwitchのインスタンスを生成します。
 
-```
+```C++
 VersatileSwitch mySwitch(4, INPUT_PULLUP); // pin 4, and using internal pull-up
 ```
 
@@ -32,13 +32,13 @@ VersatileSwitch mySwitch(4, INPUT_PULLUP); // pin 4, and using internal pull-up
 
 すべてのインスタンスについて、スイッチ状態の確認のために定期的に ```poll()``` を呼び出します。通常の場合、 ```loop()``` 内で呼び出すことになります。
 
-```
+```C++
 mySwitch.poll();
 ```
 
 ```poll()``` を呼び出してスイッチ状態を確認・更新した後、それらを関数で取得することができます。
 
-```
+```C++
 if (mySwitch.isClicked()) {
 
     Serial.println("Clicked.");
@@ -52,7 +52,7 @@ if (mySwitch.isClicked()) {
 
 また、 ```setup()``` 内でスイッチ動作にコールバック関数を割り当てておくと、
 
-```
+```C++
 void setup() {
 
     mySwitch.attachCallback_Clicked(on_switch_clicked);
@@ -64,7 +64,7 @@ void setup() {
 
 ```loop()``` 内で ```poll()```を呼んだ際に、それらの動作がおこなわれていればコールバック関数が自動的に呼び出されます。
 
-```
+```C++
 void loop() {
 
     mySwitch.poll();
@@ -110,7 +110,7 @@ void on_switch_long_clicked() {
 ### attachCallback_DoubleClicked()
 ### attachCallback_Released()
 スイッチの各動作についてコールバック関数を割り当てます。引数の型は ```void(*)(void)``` であり、いわゆる
-```
+```C++
 void func() {
     ...
 }
@@ -120,16 +120,16 @@ void func() {
 各関数がコールバックされるタイミングは、それぞれの動作が確定したと判定された ```poll()``` 内からとなっています。
 
 ## 時定数設定関数
-### setTimeParalyze(uint32_t);
+### setTimeParalyze(uint32_t)
 スイッチのチャタリング除去（デバウンシング）のための「麻痺」時間（ T<sub>paralyze</sub> ）をミリ秒単位で設定します。デフォルト値は「5」ミリ秒です。
 
-### setTimeUntilHold(uint32_t);
+### setTimeUntilHold(uint32_t)
 スイッチを押し始めてから「自動連続押下（リピート）」状態に至るまでの時間（ T<sub>pressing</sub> ）をミリ秒単位で設定します。デフォルト値は「500」ミリ秒です。
 
-### setTimeRepeatInterval(uint32_t);
+### setTimeRepeatInterval(uint32_t)
 「自動連続押下（リピート）」状態中の自動押下発生のインターバル時間（ T<sub>repeat</sub> ）をミリ秒単位で設定します。デフォルト値は「500」ミリ秒です
 
-### setTimeAcceptDoubleClick(uint32_t);
+### setTimeAcceptDoubleClick(uint32_t)
 スイッチ動作が「クリック」と判定された後、ある時間以内にスイッチが押されなければシングルクリックが確定されます。このダブルクリック受付時間（ T<sub>accept</sub> ）をミリ秒単位で設定します。デフォルト値は「200」ミリ秒です
 
 
@@ -141,6 +141,7 @@ void func() {
 
 麻痺が終了した最初の ```poll()``` でスイッチ位置を再度確認し、その位置に応じて ```Pressed``` や ```Released``` がコールバックされます。それに伴い、スイッチのステータスが「**RELEASED**」や「**PRESSED**」に変化します。
 
+![Figure_debauncing](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_debauncing.png)
 
 ### スイッチの連続押下と ```Held / Repeated / LongClicked``` コールバック
 スイッチの押下によってステータスが「**PRESSED**」になった後、「 T<sub>Pressing</sub> 」時間を経過した最初の ```poll()``` でまだスイッチが押し続けられていたならば、ステータスを「**HELD**」に変化させ、そのタイミングで ```Held``` と ```Repeated``` がコールバックされます。
@@ -149,12 +150,17 @@ void func() {
 
 そして、スイッチが離された後の最初の ```poll()``` で ```Released``` と ```LongClicked``` がコールバックされます。
 
+![Figure_repeating](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_repeat.png)
 
 ### クリック判定と ```Clicked / DoubleClicked``` コールバック
 スイッチの押下によってステータスが「**PRESSED**」になった後、「 T<sub>Pressing</sub> 」時間以内にスイッチが離された場合、ステータスは「**RELEASED_AFTER_CLICK**」という特殊な状態に変化します。
 
 そして「**RELEASED_AFTER_CLICK**」になってから「 T<sub>Accept</sub> 」時間以内にスイッチが押されなければ、シングルクリックであることが確定したとして ```Clicked``` がコールバックされ、ステータスは「**RELEASED**」に戻ります。
 
+![Figure_click](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_click.png)
+
 またステータスが「**RELEASED_AFTER_CLICK**」になってから「 T<sub>Accept</sub> 」時間以内にスイッチが押された場合、ステータスは「**PRESSED_AFTER_CLICK**」という別の特殊状態に変化します。
 
 そして「**PRESSED_AFTER_CLICK**」なってから「 T<sub>Pressing</sub> 」時間以内にスイッチが離されたなら、ダブルクリックが成立したものとして ```DoubleClicked``` がコールバックされ、ステータスが「**RELEASED**」に戻ります。
+
+![Figure_double_click](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_double_click.png)
