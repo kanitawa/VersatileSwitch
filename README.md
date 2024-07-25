@@ -6,7 +6,7 @@ This library performs "debouncing" of switch contacts and can detect various swi
 These events can be detected by getter functions such as “isClicked()”. The detection like "Event-Driven" style is also possible by assigning a callback function to each switch action.
 
 ## How to use
-Needs to create an instance of VersatileSwitch for each switch. The required argument is a pin number, and all digital input pins can be used for switch.
+Needs to create an instance of ```VersatileSwitch``` for each switch. The required argument is a "pin number". All digital input pins can be used for switch.
 
 ```C++
 VersatileSwitch mySwitch(4);
@@ -28,32 +28,32 @@ The “connection mode” is the 2nd argument, and either ```INPUT``` or ```INPU
 
 The "pin voltrage" is the 3rd argument, and one of ```LOW```, ```HIGH```, or ```AUTO``` is given (default value is ```AUTO``` ).
 
-The 3rd argument ```AUTO``` means the following, 
+The 3rd argument ```AUTO``` means the following: 
 
 - ```HIGH``` when the 2nd argument is ```INPUT``` .
 - ```LOW``` when the 2nd argument is ```INPUT_PULLUP``` .
 
-For all instances, ``poll()`` is called periodically to check and update the switch state. This will be usually done within ``loop()``.
-
-```C++
-mySwitch.poll();
-```
+For all instances, ```poll()``` is called periodically to check and update the switch state. This will be usually done within ```loop()```. 
 
 After calling ```poll()``` to check and update the switch state, they can be retrieved with the getter function.
 
 ```C++
-if (mySwitch.isClicked()) {
+void loop() {
+    mySwitch.poll();
 
-    Serial.println("Clicked.");
+    if (mySwitch.isClicked()) {
 
-} else if (mySwitch.isLongClicked()) {
+        Serial.println("Clicked.");
 
-    Serial.println("Long-clicked.");
+    } else if (mySwitch.isLongClicked()) {
 
+        Serial.println("Long-clicked.");
+
+    }
 }
 ```
 
-Also, assigning a callback function to a switch operation in ```setup()``` ,
+Also, assigning a callback function to a switch operation in ```setup()``` , the callback function will be called automatically in ```poll()``` when those operations are performed.
 
 ```C++
 void setup() {
@@ -63,11 +63,7 @@ void setup() {
     mySwitch.attachCallback_LongClicked(on_switch_long_clicked);
 
 }
-```
 
-The callback function will be called automatically in ```poll()``` when those operations are performed.
-
-```C++
 void loop() {
 
     mySwitch.poll();

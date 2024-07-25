@@ -38,25 +38,25 @@ VersatileSwitch mySwitch2(4, INPUT, LOW);
 
 すべてのインスタンスについて、スイッチ状態の確認と更新のために定期的に ```poll()``` を呼び出します。通常の場合、 ```loop()``` 内で呼び出すことになります。
 
-```C++
-mySwitch.poll();
-```
-
 ```poll()``` を呼び出してスイッチ状態を確認・更新した後、それらを状態取得関数で取得することができます。
 
 ```C++
-if (mySwitch.isClicked()) {
+void loop() {
+    mySwitch.poll();
 
-    Serial.println("Clicked.");
+    if (mySwitch.isClicked()) {
 
-} else if (mySwitch.isLongClicked()) {
+        Serial.println("Clicked.");
 
-    Serial.println("Long-clicked.");
+    } else if (mySwitch.isLongClicked()) {
 
+        Serial.println("Long-clicked.");
+
+    }
 }
 ```
 
-また、 ```setup()``` 内でスイッチ動作にコールバック関数を割り当てておくと、
+また、 ```setup()``` 内でスイッチ動作にコールバック関数を割り当てておくと、```loop()``` 内で ```poll()```を呼んだ際に、それらの動作がおこなわれていればコールバック関数が自動的に呼び出されます。
 
 ```C++
 void setup() {
@@ -66,11 +66,7 @@ void setup() {
     mySwitch.attachCallback_LongClicked(on_switch_long_clicked);
 
 }
-```
 
-```loop()``` 内で ```poll()```を呼んだ際に、それらの動作がおこなわれていればコールバック関数が自動的に呼び出されます。
-
-```C++
 void loop() {
 
     mySwitch.poll();
