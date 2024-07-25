@@ -6,13 +6,8 @@
 #include "VersatileSwitch.h"
 
 // constructor
-VersatileSwitch::VersatileSwitch(uint8_t p, uint8_t m) {
-  // initial values of time constants
-  time_paralyze = 5;
-  time_press = 500;
-  time_repeat = 500;
-  time_accept = 200;
-
+VersatileSwitch::VersatileSwitch(uint8_t p, uint8_t m, uint8_t v, uint32_t t_pa, uint32_t t_pr, uint32_t t_re, uint32_t t_ac)
+    :pin(p), mode(m), value(v), time_paralyze(t_pa), time_press(t_pr), time_repeat(t_re), time_accept(t_ac) {
   // initial value of status
   status = RELEASED;
 
@@ -37,13 +32,17 @@ VersatileSwitch::VersatileSwitch(uint8_t p, uint8_t m) {
   is_long_clicked = false;
   is_double_clicked = false; 
 
-  // asign pin mode
-  if (m == INPUT) { // when mode is INPUT, OFF = LOW and ON = HIGH.
-    mode = INPUT; vol_off = LOW; vol_on = HIGH;
-  } else { // when mode is INPUT_PULLUP, OFF = HIGH and ON = LOW.
-    mode = INPUT_PULLUP; vol_off = HIGH; vol_on = LOW;
+  // decide polarity and assign pin mode
+  switch (value) {
+    case LOW:
+    case HIGH:
+      vol_on = value;
+      break;
+    default:
+      vol_on = (mode == INPUT)?HIGH:LOW;
+      break;
   }
-  pin = p;
+  vol_off = !vol_on;
   pinMode(pin, mode);
 
   // initialize values of pin position

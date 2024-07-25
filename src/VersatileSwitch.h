@@ -10,13 +10,17 @@
 // Enum status of switch
 enum SWITCH_STATUS {RELEASED, PRESSED, HELD, RELEASED_AFTER_CLICK, PRESSED_AFTER_CLICK};
 
+// macros
+#define AUTO 0xff
+
 class VersatileSwitch {
   private:
-    uint8_t pin; // pin number for switch
-    uint8_t mode; // mode of input [INPUT, INPUT_PULLUP]
+    const uint8_t pin; // pin number for switch
+    const uint8_t mode; // mode of input [INPUT, INPUT_PULLUP]
+    const uint8_t value; // [LOW, HIGH] of switch ON, if (value != LOW && value != HIGH) then decided from mode.
 
-    uint8_t vol_off, vol_on; // [HIGH, LOW] for OFF and ON
-    uint8_t vol_prev, vol_curr; // [HIGH, LOW] of switch pin in prevoius and current polling
+    uint8_t vol_off, vol_on; // [LOW, HIGH] for OFF and ON
+    uint8_t vol_prev, vol_curr; // [LOW, HIGH] of switch pin in prevoius and current polling
 
     uint32_t time_paralyze; // msec. of paralyzing for debouncing
     uint32_t time_press; // msec. from start of pressing to transition to hold
@@ -56,7 +60,9 @@ class VersatileSwitch {
     boolean is_double_clicked; // one-time variable for detect click
 
   public:
-    VersatileSwitch(uint8_t, uint8_t); // constructor
+    // constructor
+    VersatileSwitch(uint8_t p, uint8_t m = INPUT_PULLUP, uint8_t v = AUTO,
+      uint32_t t_pa = 5, uint32_t t_pr = 500, uint32_t t_re = 500, uint32_t t_ac = 200);
 
     void attachCallback_Pressed(void(* func)(void));
     void attachCallback_Clicked(void(* func)(void));
