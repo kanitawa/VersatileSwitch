@@ -28,6 +28,14 @@ setTimeAcceptDoubleClick	KEYWORD2
 isOn	KEYWORD2
 isOff	KEYWORD2
 
+isPressed	KEYWORD2
+isReleased	KEYWORD2
+isHeld	KEYWORD2
+
+isClicked	KEYWORD2
+isLongClicked	KEYWORD2
+isDoubleClicked	KEYWORD2
+
 poll	KEYWORD2
 
 #######################################
@@ -37,3 +45,4 @@ poll	KEYWORD2
 #######################################
 # Constants (LITERAL1)
 #######################################
+AUTO	LITERAL1
