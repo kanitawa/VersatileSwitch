@@ -26,6 +26,7 @@ VersatileSwitch::VersatileSwitch(uint8_t p, uint8_t m, uint8_t v, uint32_t t_pa,
   is_long_attached = false;
   is_double_attached = false;
   is_release_attached = false;
+  is_finalize_attached = false;
 
   // all one-time variables are not detected.
   is_clicked = false;
@@ -86,6 +87,11 @@ void VersatileSwitch::attachCallback_Released(void(* func)(void)) {
   is_release_attached = true;
 }
 
+void VersatileSwitch::attachCallback_Finalized(void(* func)(void)) {
+  callback_finalized = func;
+  is_finalize_attached = true;
+}
+
 // setter for time constants
 void VersatileSwitch::setTimeParalyze(uint32_t t) {time_paralyze = t;}
 void VersatileSwitch::setTimeUntilHold(uint32_t t) {time_press = t;}
@@ -144,12 +150,14 @@ void VersatileSwitch::poll() {
               break;
             case PRESSED_AFTER_CLICK:
               if (is_double_attached) callback_double_clicked(); // callback "double_clicked" if attached
+              if (is_finalize_attached) callback_finalized();
               is_double_clicked = true;
               ms_pressed = 0; ms_clicked = 0;
               status = RELEASED;
               break;
             case HELD:
               if (is_long_attached) callback_long_clicked(); // callback "long_clicked" if attached
+              if (is_finalize_attached) callback_finalized();
               is_long_clicked = true;
               ms_pressed = 0; ms_clicked = 0;
               status = RELEASED; // status update to RELEASED
@@ -185,6 +193,7 @@ void VersatileSwitch::poll() {
         case RELEASED_AFTER_CLICK:
           if (millis() - ms_clicked > time_accept) { // if status is NOT changed during time_accept
             if (is_click_attached) callback_clicked(); // callback "clicked" if attached
+            if (is_finalize_attached) callback_finalized();
             is_clicked = true;
             status = RELEASED;
           }
@@ -192,6 +201,7 @@ void VersatileSwitch::poll() {
         case PRESSED_AFTER_CLICK:
           if (millis() - ms_pressed > time_press) { // if status is NOT changed during time_press
             if (is_click_attached) callback_clicked(); // callback "clicked" if attached
+            // this sequence is ** CLICK AND HOLD **, don't callback finalized after clicked!
             is_clicked = true;
             if (is_hold_attached) callback_held(); // callback "holded" if attached
             if (is_repeat_attached) callback_repeated(); // リcallback "repeated" if attached

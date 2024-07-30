@@ -87,30 +87,31 @@ void on_switch_long_clicked() {
 ```
 
 ## 状態取得関数
-### isOn()
-### isPressed()
+### ```isOn()```
+### ```isPressed()```
 スイッチが「押された（ ```ON``` ）」状態にあれば "true" を返します。
 
-### isOff()
-### isReleased()
+### ```isOff()```
+### ```isReleased()```
 スイッチが「離れた（ ```OFF``` ）」状態にあれば "true" を返します。
 
 ### isHeld()
 スイッチが押され続けて「自動連続押下（リピート）」状態にあれば "true" を返します。この状態の場合、 ```isPressed()``` は "false" を返します。
 
-### isClicked()
-### isDoubleClicked()
-### isLongClicked()
+### ```isClicked()```
+### ```isDoubleClicked()```
+### ```isLongClicked()```
 この関数を呼ぶ直前の ```poll()``` にてスイッチの「クリック / ダブルクリック / 長押し（ロングクリック）」動作が判定されている場合に "true" を返します。これらの関数の返り値は一過性で、"true" を返した ```poll()``` のさらに次の ```poll()``` では "false" を返します。
 
 ## コールバック割当て関数
-### attachCallback_Pressed()
-### attachCallback_Clicked()
-### attachCallback_Held()
-### attachCallback_Repeated()
-### attachCallback_LongClicked()
-### attachCallback_DoubleClicked()
-### attachCallback_Released()
+### ```attachCallback_Pressed()```
+### ```attachCallback_Clicked()```
+### ```attachCallback_Held()```
+### ```attachCallback_Repeated()```
+### ```attachCallback_LongClicked()```
+### ```attachCallback_DoubleClicked()```
+### ```attachCallback_Released()```
+### ```attachCallback_Finalized()```
 スイッチの各動作についてコールバック関数を割り当てます。引数の型は ```void(*)(void)``` であり、いわゆる
 ```C++
 void func() {
@@ -121,47 +122,60 @@ void func() {
 
 各関数がコールバックされるタイミングは、それぞれの動作が確定したと判定された ```poll()``` 内からとなっています。
 
+```attachCallback_Finalized()``` はクリックやダブルクリックなど一連の動作が確定したときにコールバックされます。詳細は下記「内部動作について」を参照してください。
+
 ## 時定数設定関数
-### setTimeParalyze(uint32_t)
+### ```setTimeParalyze(uint32_t)```
 スイッチのチャタリング除去（デバウンシング）のための「麻痺」時間（ T<sub>Paralyze</sub> ）をミリ秒単位で設定します（デフォルト値は「5」ミリ秒）。
 
-### setTimeUntilHold(uint32_t)
+### ```setTimeUntilHold(uint32_t)```
 スイッチを押し始めてから「自動連続押下（リピート）」状態に至るまでの時間（ T<sub>Pressing</sub> ）をミリ秒単位で設定します（デフォルト値は「500」ミリ秒）。
 
-### setTimeRepeatInterval(uint32_t)
+### ```setTimeRepeatInterval(uint32_t)```
 「自動連続押下（リピート）」状態中の自動押下発生のインターバル時間（ T<sub>Repeat</sub> ）をミリ秒単位で設定します（デフォルト値は「500」ミリ秒）。
 
-### setTimeAcceptDoubleClick(uint32_t)
+### ```setTimeAcceptDoubleClick(uint32_t)```
 スイッチ動作が「クリック」と判定された後、ある時間以内にスイッチが押されなければシングルクリックが確定されます。このダブルクリック受付時間（ T<sub>Accept</sub> ）をミリ秒単位で設定します（デフォルト値は「200」ミリ秒）。
 
 
-## 内部動作について
+## 内部動作とコールバックのタイミングについて
 ### スイッチのチャタリング除去（デバウンシング）と ```Pressed``` / ```Released``` コールバック
 
 ```poll()``` ごとにスイッチ位置 [ ```ON```, ```OFF``` ] を確認します。その位置が前回 ```poll()``` 時と異なっていた場合は麻痺状態になり、麻痺している「 T<sub>Paralyze</sub> 」時間中の ```poll()``` では何もおこなわれません。
 
 麻痺が終了した最初の ```poll()``` でスイッチ位置を再度確認し、その位置に応じて ```Pressed``` や ```Released``` がコールバックされます。それに伴い、スイッチのステータスが「**RELEASED**」や「**PRESSED**」に変化します。
 
+```Released``` がコールバックされるタイミングは、あくまでもスイッチが離されたタイミングであって、クリックなどの動作が確定したタイミングではないことに注意してください。
+
 ![Figure_debauncing](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_debauncing.png)
 
 ### スイッチの連続押下と ```Held``` / ```Repeated``` / ```LongClicked``` コールバック
-スイッチの押下によってステータスが「**PRESSED**」になった後、「 T<sub>Pressing</sub> 」時間を経過した最初の ```poll()``` でまだスイッチが押し続けられていたならば、ステータスを「**HELD**」に変化させ、そのタイミングで ```Held``` と ```Repeated``` がコールバックされます。
+スイッチの押下によってステータスが「**PRESSED**」になった後、「 T<sub>Pressing</sub> 」時間を経過した最初の ```poll()``` でまだスイッチが押し続けられていたならば、ステータスを「**HELD**」に変化させ、そのタイミングで ```Held``` → ```Repeated``` がコールバックされます。
 
-その後は、「 T<sub>Repeat</sub> 」を超えた最初の ```poll()``` ごとに ```Repeated``` がコールバックます。
+その後は、「 T<sub>Repeat</sub> 」を超えた最初の ```poll()``` ごとに ```Repeated``` がコールバックされます。
 
-そして、スイッチが離された後の最初の ```poll()``` で ```Released``` と ```LongClicked``` がコールバックされます。
+そして、スイッチが離された後の最初の ```poll()``` で ```Released``` → ```LongClicked``` → ```Finalized``` がコールバックされます。
 
 ![Figure_repeating](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_repeat.png)
 
 ### クリック判定と ```Clicked``` / ```DoubleClicked``` コールバック
 スイッチの押下によってステータスが「**PRESSED**」になった後、「 T<sub>Pressing</sub> 」時間以内にスイッチが離された場合、ステータスは「**RELEASED_AFTER_CLICK**」という特殊な状態に変化します。
 
-そして「**RELEASED_AFTER_CLICK**」になってから「 T<sub>Accept</sub> 」時間以内にスイッチが押されなければ、シングルクリックであることが確定したとして ```Clicked``` がコールバックされ、ステータスは「**RELEASED**」に戻ります。
+そして「**RELEASED_AFTER_CLICK**」になってから「 T<sub>Accept</sub> 」時間以内にスイッチが押されなければ、シングルクリックであることが確定したとして ```Clicked``` → ```Finalized``` がコールバックされ、ステータスは「**RELEASED**」に戻ります。
 
 ![Figure_click](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_click.png)
 
 またステータスが「**RELEASED_AFTER_CLICK**」になってから「 T<sub>Accept</sub> 」時間以内にスイッチが押された場合、ステータスは「**PRESSED_AFTER_CLICK**」という別の特殊状態に変化します。
 
-そして「**PRESSED_AFTER_CLICK**」なってから「 T<sub>Pressing</sub> 」時間以内にスイッチが離されたなら、ダブルクリックが成立したものとして ```DoubleClicked``` がコールバックされ、ステータスが「**RELEASED**」に戻ります。
+そして「**PRESSED_AFTER_CLICK**」なってから「 T<sub>Pressing</sub> 」時間以内にスイッチが離されたなら、ダブルクリックが成立したものとして ```DoubleClicked``` → ```Finalized``` がコールバックされ、ステータスが「**RELEASED**」に戻ります。
 
 ![Figure_double_click](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_double_click.png)
+
+### 「クリック ＆ ホールド」と ```Finalized``` コールバック
+シングルクリックが確定した後、「 T<sub>Accept</sub> 」時間以内にスイッチが押されて「**PRESSED_AFTER_CLICK**」になったが「 T<sub>Pressing</sub> 」時間以内にスイッチが離されなかった場合、この一連の動作は「**クリック & ホールド**」だと判定されます。
+
+判定された```poll()``` のタイミングで ```Clicked``` → ```Held``` → ```Repeated``` がコールバックされます。通常のシングルクリックの場合とは異なり、```Clicked``` の後に ```Finalized``` がコールバックされないことに注意してください。
+
+この後は通常の連続押下と同じで、「 T<sub>Repeat</sub> 」ごとに ```Repeated``` がコールバックされ、スイッチが離されたら ```Released``` → ```LongClicked``` → ```Finalized``` がコールバックされます。
+
+![Figure_click_and_hold](https://github.com/kanitawa/VersatileSwitch/blob/images/figure_click_and_hold.png)

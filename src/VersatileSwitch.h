@@ -54,6 +54,9 @@ class VersatileSwitch {
     
     boolean is_release_attached; // true if callback_released is attached
     void(* callback_released)(void); // callback function for releasing switch
+    
+    boolean is_finalize_attached; // true if callback_finalized is attached
+    void(* callback_finalized)(void); // callback function for finalized switch action
 
     boolean is_clicked; // one-time variable for detect click
     boolean is_long_clicked; // one-time variable for detect click
@@ -71,6 +74,7 @@ class VersatileSwitch {
     void attachCallback_LongClicked(void(* func)(void));
     void attachCallback_DoubleClicked(void(* func)(void));
     void attachCallback_Released(void(* func)(void));
+    void attachCallback_Finalized(void(* func)(void));
 
     void setTimeParalyze(uint32_t);
     void setTimeUntilHold(uint32_t); 
