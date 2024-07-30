@@ -19,6 +19,7 @@ attachCallback_Repeated	KEYWORD2
 attachCallback_LongClicked	KEYWORD2
 attachCallback_DoubleClicked	KEYWORD2
 attachCallback_Released	KEYWORD2
+attachCallback_Finalized	KEYWORD2
 
 setTimeParalyze	KEYWORD2
 setTimeUntilHold	KEYWORD2
